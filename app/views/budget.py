@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 from pathlib import Path
+import app.config as config
 
 # If you have an external file pages.py, you can import from there.
 # from app import pages
@@ -57,7 +58,7 @@ def load_data():
                     amount_val = 0.0
 
                 # Frequency and Notes
-                freq = row.get("Frequency", "Monthly")
+                freq = row.get("Frequency", config.FREQUENCIES[1])
                 notes = row.get("Notes", "")
 
                 # Build the expense dict
@@ -129,7 +130,7 @@ def render_expense_category(category_name):
     """
     init_category(category_name)
 
-    with st.expander(label=category_name, expanded=True):
+    with (st.expander(label=category_name, expanded=True)):
         st.subheader(category_name)
 
         # Display each expense row dynamically
@@ -148,12 +149,13 @@ def render_expense_category(category_name):
                     key=f"{category_name}_cost_{idx}"
                 )
             with cols[2]:
-                options = ['Weekly', 'Semi-Monthly', 'Monthly', 'Semester', 'Quarterly', 'Annually']
                 # Default to "Monthly" if current frequency is not in the list
-                default_index = options.index(expense["frequency"]) if expense["frequency"] in options else 2
+                default_index = config.FREQUENCIES.index(expense["frequency"]) \
+                    if expense["frequency"] in config.FREQUENCIES else 2
+
                 expense["frequency"] = st.selectbox(
                     label="Frequency",
-                    options=options,
+                    options=config.FREQUENCIES,
                     index=default_index,
                     key=f"{category_name}_frequency_{idx}"
                 )

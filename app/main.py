@@ -47,6 +47,7 @@ current_page = st.navigation(
 )
 
 
+
 # --- RUN NAVIGATION ---
 
 st.session_state.user = 'admin'
@@ -60,7 +61,23 @@ else:
 
 # Logout functionality
 with st.sidebar:
-    if st.button('⬅️ Logout'):
+
+    st.button(
+        label='💾 Save Budget Plan',
+        use_container_width=True,
+    )
+
+    st.button(
+        label='🔁 Reset Budget Plan',
+        use_container_width=True,
+    )
+
+    st.button(
+        label='🗑️ Delete Budget Plan',
+        use_container_width=True,
+    )
+
+    if st.button('⬅️ Logout', use_container_width=True,):
         st.session_state.user = None
         st.switch_page(pages.login_page)
 

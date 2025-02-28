@@ -10,3 +10,14 @@ PAGE_NAMES = {
     "settings": "⚙️ Settings",
     "login": "🚨 Login"
 }
+
+FREQUENCIES = [
+    'Weekly',
+    'Bi-Weekly',
+    'Semi-Monthly',
+    'Monthly',
+    'Semester',
+    'Quarterly',
+    'Semi-Annually',
+    'Annually'
+]
