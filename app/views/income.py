@@ -158,6 +158,12 @@ with rhs_col:
                     st.session_state.dialog_open = False  # Close dialog
                     st.rerun()
 
+    st.link_button(
+        label='Paycheck Calculator',
+        url='https://smartasset.com/taxes/paycheck-calculator',
+        type='primary',
+        use_container_width=True
+    )
 
     st.title('Tax Rates')
 

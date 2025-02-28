@@ -16,23 +16,36 @@ if "user" not in st.session_state:
 
 import pages
 import config
+st.logo(
+    image='static/Streamlit Logo.png',
+    size='large',
+    link=pages.dashboard_page.url_path
+)
 
 st.set_page_config(layout="wide")
 
-# --- NAVIGATION SETUP ---
-current_page = st.navigation(
-    pages=[
-        pages.dashboard_page,
-        pages.projections_page,
-        pages.income_page,
-        pages.budget_page,
-        pages.subscriptions_page,
-        pages.planned_purchases,
-        pages.about_page,
-        pages.settings_page,
+page_list = [
+    pages.dashboard_page,
+    pages.projections_page,
+    pages.income_page,
+    pages.budget_page,
+    pages.subscriptions_page,
+    pages.planned_purchases,
+    pages.about_page,
+    pages.settings_page,
+]
+
+# Displays login page if no user is logged in.
+if st.session_state.user is None:
+    page_list += [
         pages.login_page
     ]
+
+# --- NAVIGATION SETUP ---
+current_page = st.navigation(
+    pages=page_list
 )
+
 
 # --- RUN NAVIGATION ---
 
