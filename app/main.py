@@ -14,6 +14,7 @@ if PROJECT_ROOT not in sys.path:
 if "user" not in st.session_state:
     st.session_state.user = None
 
+# These imports rely on initializing the session state
 import pages
 import config
 st.logo(

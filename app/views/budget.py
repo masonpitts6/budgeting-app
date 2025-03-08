@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from pathlib import Path
 import app.config as config
+import plotly.express as px
 
 # If you have an external file pages.py, you can import from there.
 # from app import pages
@@ -130,8 +131,75 @@ def render_expense_category(category_name):
     """
     init_category(category_name)
 
-    with (st.expander(label=category_name, expanded=True)):
+    with st.expander(label=category_name, expanded=True):
         st.subheader(category_name)
+
+        cost_ls = []
+        expense_ls = []
+        for idx, expense in enumerate(st.session_state[category_name]):
+            cost_ls = cost_ls + [expense['cost']]
+            expense_ls = expense_ls + [expense['name']]
+
+        cols = st.columns(4)
+
+        with cols[0]:
+            st.metric(
+                label='Weekly Cost',
+                value=f'${sum(cost_ls):,.0f}'
+            )
+
+        with cols[1]:
+            st.metric(
+                label='Monthly Cost',
+                value=f'${sum(cost_ls):,.0f}'
+            )
+
+        with cols[2]:
+            st.metric(
+                label='Annual Cost',
+                value=f'${sum(cost_ls):,.0f}'
+            )
+
+        with cols[3]:
+            st.metric(
+                label='Percentage of Income',
+                value=f'25%'
+            )
+
+        st.markdown('<br>', unsafe_allow_html=True)
+
+        cols = st.columns(2)
+
+        with cols[0]:
+
+            cost_data = pd.DataFrame({
+                "Cost Type": ["Weekly", "Monthly", "Quarterly", "Annual"],
+                "Amount": [sum(cost_ls)] * 4
+            })
+
+            st.subheader("📊 Cost Breakdown Chart")
+            st.markdown('<br><br>', unsafe_allow_html=True)
+            st.bar_chart(cost_data.set_index("Cost Type"))
+
+        with cols[1]:
+
+            pie_data = pd.DataFrame(
+                {
+                    'Category': expense_ls,
+                    'Amount': cost_ls
+                }
+            )
+            st.subheader('Category Breakdown')
+            fig3 = px.pie(pie_data, names="Category", values="Amount")
+            fig3.update_layout(height=400, width=400, legend=dict(
+                orientation="h",  # Horizontal legend
+                yanchor="top",  # Align from the top
+                y=-0.3,  # Adjust this value downward if overlapping occurs (e.g., -0.4)
+                xanchor="center",
+                x=0.5
+            ),
+                               margin=dict(t=50, b=100))
+            st.plotly_chart(fig3, use_container_width=True)
 
         # Display each expense row dynamically
         for idx, expense in enumerate(st.session_state[category_name]):
@@ -183,6 +251,121 @@ load_data()  # Make sure we load data into session state first.
 lhs_col, rhs_col = st.columns([3, 1])
 
 with lhs_col:
+    with st.expander(label='💰 Budget Overview', expanded=True):
+        data = {
+            "Expense": [
+                "Subscriptions & Recurring Expenses", "Planned Purchases", "Rent", "Electricity", "Water", "Internet",
+                "Phone bill", "Groceries", "Gas", "Health Insurance", "Dental Insurance", "Vision Insurance",
+                "Renter's Insurance", "Car Insurance", "Life Insurance", "Short-term Disability",
+                "Long-term Disability",
+                "Car Payment", "Retirement Investing", "Personal Investing", "Savings", "Student Loan Payments",
+                "Discretionary Income", "Car Maintenance", "Dog Day Care", "Pet Insurance", "Critical Illness",
+                "Critical Accident", "Legal Services", "Health Savings Account"
+            ],
+            "Expense Category": [
+                "Subscriptions & Recurring Expenses", "Planned Purchases", "Housing", "Utilities & Communications",
+                "Utilities & Communications", "Utilities & Communications", "Utilities & Communications",
+                "Food & Personal Items", "Gas & Transportation", "Insurance", "Insurance", "Insurance", "Insurance",
+                "Insurance", "Insurance", "Insurance", "Insurance", "Gas & Transportation", "Investing & Savings",
+                "Investing & Savings", "Investing & Savings", "Debt Service", "Discretionary Income",
+                "Gas & Transportation", "Discretionary Income", "Insurance", "Insurance", "Insurance", "Insurance",
+                "Investing & Savings"
+            ],
+            "Weekly": [
+                164.65, 192.31, 524.54, 46.15, 23.08, 11.54, 40.53, 200.00, 100.00, 87.11, 12.48, 2.26, 6.75,
+                153.92, 1.04, 0.00, 1.35, 193.38, 57.69, 0.00, 0.00, 203.65, 400.00, 57.69, 80.00, 11.54, 4.02,
+                3.43, 3.76, 51.28
+            ],
+            "Monthly": [
+                713.48, 833.33, 2273.00, 200.00, 100.00, 50.00, 175.64, 866.67, 433.33, 377.47, 54.09, 9.80, 29.25,
+                667.00, 4.50, 0.00, 5.86, 838.00, 250.00, 0.00, 0.00, 882.50, 1733.33, 250.00, 346.67, 50.00, 17.44,
+                14.86, 16.30, 222.22
+            ],
+            "Annual": [
+                8561.76, 10000.00, 27276.00, 2400.00, 1200.00, 600.00, 2107.68, 10400.00, 5200.00, 4529.66, 649.09,
+                117.57, 351.00, 8004.00, 54.00, 0.00, 70.32, 10056.00, 3000.00, 0.00, 0.00, 10590.00, 20800.00,
+                3000.00, 4160.00, 600.00, 209.28, 178.32, 195.60, 2666.64
+            ],
+            "Percentage of Income": [
+                "4.9%", "5.7%", "15.6%", "1.4%", "0.7%", "0.3%", "1.2%", "5.9%", "3.0%", "2.6%", "0.4%", "0.1%",
+                "0.2%", "4.6%", "0.0%", "0.0%", "0.0%", "5.7%", "1.7%", "0.0%", "0.0%", "6.0%", "11.9%", "1.7%",
+                "2.4%", "0.3%", "0.1%", "0.1%", "0.1%", "1.5%"
+            ]
+        }
+
+        # Convert to DataFrame
+        df = pd.DataFrame(data)
+
+        # Format currency values with "$" symbol
+        df["Weekly"] = df["Weekly"].apply(lambda x: f"${x:,.2f}")
+        df["Monthly"] = df["Monthly"].apply(lambda x: f"${x:,.2f}")
+        df["Annual"] = df["Annual"].apply(lambda x: f"${x:,.2f}")
+
+        # Streamlit App Title
+        st.title("💰 Budget Overview")
+
+        cols = st.columns(2)
+        with cols[0]:
+            st.title('Bar Chart Here')
+
+        with cols[1]:
+            st.title('Pie Chart Here')
+
+        tabs = st.tabs(["📊 Budget Table", ] + expense_categories)
+
+        with tabs[0]:
+            # Define custom CSS for correct table rendering in Streamlit
+            table_style = """
+                <style>
+                    .styled-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        margin-top: 20px;
+                    }
+                    .styled-table th {
+                        background-color: #004466;
+                        color: white;
+                        text-align: center;
+                        padding: 12px;
+                        font-size: 16px;
+                    }
+                    .styled-table td {
+                        padding: 10px;
+                        border-bottom: 1px solid #ddd;
+                        text-align: right;
+                    }
+                    .styled-table tr:nth-child(even) {
+                        background-color: #f2f2f2;
+                    }
+                    .styled-table tr:hover {
+                        background-color: #d9ebf9;
+                    }
+                    .styled-table td:first-child, .styled-table td:nth-child(2) {
+                        text-align: left;
+                        font-weight: bold;
+                    }
+                    .highlight {
+                        background-color: #ffcccc !important;
+                        font-weight: bold;
+                        padding: 5px;
+                    }
+                </style>
+            """
+
+            # Highlight high annual expenses (> $5,000)
+            df["Annual"] = df["Annual"].apply(
+                lambda x: f'<span class="highlight">{x}</span>' if float(
+                    x.replace("$", "").replace(",", "")) > 5000 else x)
+
+            # Convert DataFrame to HTML
+            table_html = df.to_html(index=False, escape=False, classes="styled-table")
+
+            # ✅ Correct Way to Render the Table in Streamlit
+            st.write(table_style, unsafe_allow_html=True)  # Load CSS first
+            st.write(table_html, unsafe_allow_html=True)  # Render the table separately
+
     # Render each known category
     for expense_category in expense_categories:
         render_expense_category(expense_category)
