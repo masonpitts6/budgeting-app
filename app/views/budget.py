@@ -115,7 +115,7 @@ def render_expenses_tab(
                         amount_val = float(row['Amount'])
                         step_size = float(compute_step(amount_val))
                         amount_input = cols[1].number_input(
-                            label='Amount',
+                            label='Amount ($)',
                             value=amount_val,
                             step=step_size,
                             format='%0.2f',
