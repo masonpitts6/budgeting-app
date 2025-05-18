@@ -1,395 +1,281 @@
-import streamlit as st
+import datetime
+import math
+from typing import List
+
 import pandas as pd
-import os
-from pathlib import Path
-import app.config as config
-import plotly.express as px
-
-# If you have an external file pages.py, you can import from there.
-# from app import pages
-
-# Optional: If you have a title in pages.budget_page, you can reference it here.
-# For demonstration, we'll just hardcode a title.
-st.title("My Budget Page")
-
-# Construct the correct file path
-file_path = Path(os.getcwd()) / "data" / "budget.csv"
-
-# List of known categories
-expense_categories = [
-    'Subscriptions & Recurring Expenses',
-    'Planned Purchases',
-    'Housing',
-    'Utilities & Communications',
-    'Groceries & Personal Items',
-    'Transportation',
-    'Insurance',
-    'Debt Service',
-    'Investing & Saving',
-    'Discretionary Income'
-]
+import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 
-# 1) LOAD DATA INTO SESSION STATE -------------------------------------------
-def load_data():
+def compute_step(amount: float) -> int:
     """
-    Reads the CSV from disk and populates st.session_state with expense data.
-    Each category in expense_categories is initialized as a list of dicts.
+    Compute a step size that’s the nearest power of ten for the given amount.
+    E.g. 7.25 → 1, 42.50 → 10, 327 → 100, 2300 → 1000.
+
+    Args:
+        amount (float): The expense amount.
+
+    Returns:
+        int: 10**floor(log10(amount)) or 1 if amount ≤ 0.
     """
-    if "data_loaded" not in st.session_state:
-        if file_path.exists():
-            df = pd.read_csv(file_path)
-        else:
-            # If the file doesn't exist yet, create an empty DataFrame
-            df = pd.DataFrame(columns=["Expense Category", "Expense Name", "Amount", "Frequency", "Notes"])
-
-        # Initialize each category as an empty list in session state
-        for cat in expense_categories:
-            st.session_state[cat] = []
-
-        # Populate each category list from the CSV
-        for _, row in df.iterrows():
-            cat = row.get("Expense Category", "")
-            if cat in expense_categories:
-                # Convert amount to float, stripping out "$" or commas if present
-                amount_str = str(row.get("Amount", "0")).replace("$", "").replace(",", "")
-                try:
-                    amount_val = float(amount_str)
-                except:
-                    amount_val = 0.0
-
-                # Frequency and Notes
-                freq = row.get("Frequency", config.FREQUENCIES[1])
-                notes = row.get("Notes", "")
-
-                # Build the expense dict
-                expense_dict = {
-                    "name": row.get("Expense Name", ""),
-                    "cost": amount_val,
-                    "frequency": freq,
-                    "notes": notes
-                }
-
-                # Add it to the corresponding list in session state
-                st.session_state[cat].append(expense_dict)
-
-        # Mark that data has been loaded so we don’t reload on every run
-        st.session_state["data_loaded"] = True
+    if amount <= 0:
+        return 1
+    exponent = math.floor(math.log10(amount))
+    return 10 ** max(exponent - 1, 0)
 
 
-# 2) SAVE DATA BACK TO CSV -------------------------------------------------
-def save_data():
+def save_expense(
+        expense_id: int,
+        name: str,
+        amount: float,
+        frequency: str,
+        last_updated: datetime.date,
+        notes: str,
+) -> None:
     """
-    Gathers all expenses from session state and writes them to the CSV file.
+    Handle saving an edited expense entry.
+
+    Args:
+        expense_id (int): ID of the expense to edit.
+        name (str): Updated name.
+        amount (float): Updated amount.
+        frequency (str): Updated frequency.
+        last_updated (datetime.date): Updated date.
+        notes (str): Updated notes.
     """
-    data_rows = []
-    for cat in expense_categories:
-        for exp in st.session_state[cat]:
-            data_rows.append({
-                "Expense Category": cat,
-                "Expense Name": exp["name"],
-                "Amount": exp["cost"],
-                "Frequency": exp["frequency"],
-                "Notes": exp["notes"]
-            })
-
-    # Convert to DataFrame and save
-    df = pd.DataFrame(data_rows)
-    df.to_csv(file_path, index=False)
-    st.success("Budget saved successfully!")
+    # TODO: implement your actual save logic
+    st.success(
+        f'Expense {expense_id} saved:\n'
+        f'• Name: {name}\n'
+        f'• Amount: ${amount:,.2f}\n'
+        f'• Frequency: {frequency}\n'
+        f'• Last Updated: {last_updated}\n'
+        f'• Notes: {notes or "(none)"}'
+    )
 
 
-# 3) INITIALIZE/HELPER FUNCTIONS -------------------------------------------
-def init_category(category_name):
-    """Ensure a list exists for this category in session state."""
-    if category_name not in st.session_state:
-        st.session_state[category_name] = []
-
-
-def add_expense(category_name):
-    """Append a new expense with default values."""
-    init_category(category_name)
-    st.session_state[category_name].append({
-        "name": "",
-        "cost": 0.0,
-        "frequency": "Monthly",
-        "notes": ""
-    })
-
-
-def delete_expense(category_name, index):
-    """Delete an expense from a given category at the specified index."""
-    init_category(category_name)
-    if 0 <= index < len(st.session_state[category_name]):
-        st.session_state[category_name].pop(index)
-
-
-def render_expense_category(category_name):
+def delete_expense(expense_id: int) -> None:
     """
-    Renders an expander for the given category name,
-    showing all expenses in session state with edit/delete capabilities.
+    Handle deleting an expense entry.
+
+    Args:
+        expense_id (int): ID of the expense to delete.
     """
-    init_category(category_name)
-
-    with st.expander(label=category_name, expanded=True):
-        st.subheader(category_name)
-
-        cost_ls = []
-        expense_ls = []
-        for idx, expense in enumerate(st.session_state[category_name]):
-            cost_ls = cost_ls + [expense['cost']]
-            expense_ls = expense_ls + [expense['name']]
-
-        cols = st.columns(4)
-
-        with cols[0]:
-            st.metric(
-                label='Weekly Cost',
-                value=f'${sum(cost_ls):,.0f}'
-            )
-
-        with cols[1]:
-            st.metric(
-                label='Monthly Cost',
-                value=f'${sum(cost_ls):,.0f}'
-            )
-
-        with cols[2]:
-            st.metric(
-                label='Annual Cost',
-                value=f'${sum(cost_ls):,.0f}'
-            )
-
-        with cols[3]:
-            st.metric(
-                label='Percentage of Income',
-                value=f'25%'
-            )
-
-        st.markdown('<br>', unsafe_allow_html=True)
-
-        cols = st.columns(2)
-
-        with cols[0]:
-
-            cost_data = pd.DataFrame({
-                "Cost Type": ["Weekly", "Monthly", "Quarterly", "Annual"],
-                "Amount": [sum(cost_ls)] * 4
-            })
-
-            st.subheader("📊 Cost Breakdown Chart")
-            st.markdown('<br><br>', unsafe_allow_html=True)
-            st.bar_chart(cost_data.set_index("Cost Type"))
-
-        with cols[1]:
-
-            pie_data = pd.DataFrame(
-                {
-                    'Category': expense_ls,
-                    'Amount': cost_ls
-                }
-            )
-            st.subheader('Category Breakdown')
-            fig3 = px.pie(pie_data, names="Category", values="Amount")
-            fig3.update_layout(height=400, width=400, legend=dict(
-                orientation="h",  # Horizontal legend
-                yanchor="top",  # Align from the top
-                y=-0.3,  # Adjust this value downward if overlapping occurs (e.g., -0.4)
-                xanchor="center",
-                x=0.5
-            ),
-                               margin=dict(t=50, b=100))
-            st.plotly_chart(fig3, use_container_width=True)
-
-        # Display each expense row dynamically
-        for idx, expense in enumerate(st.session_state[category_name]):
-            cols = st.columns([1, 1, 1, 1, 0.25])
-            with cols[0]:
-                expense["name"] = st.text_input(
-                    label="Expense Name",
-                    value=expense["name"],
-                    key=f"{category_name}_name_{idx}"
-                )
-            with cols[1]:
-                expense["cost"] = st.number_input(
-                    label="Cost ($)",
-                    value=expense["cost"],
-                    key=f"{category_name}_cost_{idx}"
-                )
-            with cols[2]:
-                # Default to "Monthly" if current frequency is not in the list
-                default_index = config.FREQUENCIES.index(expense["frequency"]) \
-                    if expense["frequency"] in config.FREQUENCIES else 2
-
-                expense["frequency"] = st.selectbox(
-                    label="Frequency",
-                    options=config.FREQUENCIES,
-                    index=default_index,
-                    key=f"{category_name}_frequency_{idx}"
-                )
-            with cols[3]:
-                expense["notes"] = st.text_input(
-                    label="Notes",
-                    value=expense["notes"],
-                    key=f"{category_name}_notes_{idx}"
-                )
-            with cols[4]:
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("❌", key=f"{category_name}_delete_{idx}"):
-                    delete_expense(category_name, idx)
-                    st.rerun()
-
-        # Button to add a new expense within this category
-        if st.button("Add Expense", key=f"{category_name}_add"):
-            add_expense(category_name)
-            st.rerun()
+    # TODO: implement your actual delete logic
+    st.warning(f'Deleted expense with ID {expense_id}')
 
 
-# 4) MAIN APP LOGIC --------------------------------------------------------
-load_data()  # Make sure we load data into session state first.
+def render_expenses_tab(
+        expense_tab: DeltaGenerator,
+        budget_data: pd.DataFrame,
+        expense_categories: List[str],
+        frequency_options: List[str],
+) -> None:
+    """
+    Render the Expenses tab, grouping each row in its own st.form.
 
-lhs_col, rhs_col = st.columns([3, 1])
+    Args:
+        expense_tab (DeltaGenerator): The Streamlit tab/container to render into.
+        budget_data (pd.DataFrame): DataFrame of budget items with columns:
+            ['ID','Date','Category','Name','Amount','Frequency','Notes','Status','Category Emoji'].
+        expense_categories (List[str]): Ordered list of unique categories to display.
+        frequency_options (List[str]): Master list of frequency choices.
+    """
+    with expense_tab:
+        st.subheader('Expenses')
 
-with lhs_col:
-    with st.expander(label='💰 Budget Overview', expanded=True):
-        data = {
-            "Expense": [
-                "Subscriptions & Recurring Expenses", "Planned Purchases", "Rent", "Electricity", "Water", "Internet",
-                "Phone bill", "Groceries", "Gas", "Health Insurance", "Dental Insurance", "Vision Insurance",
-                "Renter's Insurance", "Car Insurance", "Life Insurance", "Short-term Disability",
-                "Long-term Disability",
-                "Car Payment", "Retirement Investing", "Personal Investing", "Savings", "Student Loan Payments",
-                "Discretionary Income", "Car Maintenance", "Dog Day Care", "Pet Insurance", "Critical Illness",
-                "Critical Accident", "Legal Services", "Health Savings Account"
-            ],
-            "Expense Category": [
-                "Subscriptions & Recurring Expenses", "Planned Purchases", "Housing", "Utilities & Communications",
-                "Utilities & Communications", "Utilities & Communications", "Utilities & Communications",
-                "Food & Personal Items", "Gas & Transportation", "Insurance", "Insurance", "Insurance", "Insurance",
-                "Insurance", "Insurance", "Insurance", "Insurance", "Gas & Transportation", "Investing & Savings",
-                "Investing & Savings", "Investing & Savings", "Debt Service", "Discretionary Income",
-                "Gas & Transportation", "Discretionary Income", "Insurance", "Insurance", "Insurance", "Insurance",
-                "Investing & Savings"
-            ],
-            "Weekly": [
-                164.65, 192.31, 524.54, 46.15, 23.08, 11.54, 40.53, 200.00, 100.00, 87.11, 12.48, 2.26, 6.75,
-                153.92, 1.04, 0.00, 1.35, 193.38, 57.69, 0.00, 0.00, 203.65, 400.00, 57.69, 80.00, 11.54, 4.02,
-                3.43, 3.76, 51.28
-            ],
-            "Monthly": [
-                713.48, 833.33, 2273.00, 200.00, 100.00, 50.00, 175.64, 866.67, 433.33, 377.47, 54.09, 9.80, 29.25,
-                667.00, 4.50, 0.00, 5.86, 838.00, 250.00, 0.00, 0.00, 882.50, 1733.33, 250.00, 346.67, 50.00, 17.44,
-                14.86, 16.30, 222.22
-            ],
-            "Annual": [
-                8561.76, 10000.00, 27276.00, 2400.00, 1200.00, 600.00, 2107.68, 10400.00, 5200.00, 4529.66, 649.09,
-                117.57, 351.00, 8004.00, 54.00, 0.00, 70.32, 10056.00, 3000.00, 0.00, 0.00, 10590.00, 20800.00,
-                3000.00, 4160.00, 600.00, 209.28, 178.32, 195.60, 2666.64
-            ],
-            "Percentage of Income": [
-                "4.9%", "5.7%", "15.6%", "1.4%", "0.7%", "0.3%", "1.2%", "5.9%", "3.0%", "2.6%", "0.4%", "0.1%",
-                "0.2%", "4.6%", "0.0%", "0.0%", "0.0%", "5.7%", "1.7%", "0.0%", "0.0%", "6.0%", "11.9%", "1.7%",
-                "2.4%", "0.3%", "0.1%", "0.1%", "0.1%", "1.5%"
-            ]
-        }
+        for category in expense_categories:
+            df_cat = budget_data.loc[
+                budget_data['Category'] == category
+                ].copy()
+            total = df_cat['Amount'].sum().round(0)
+            category_emoji = df_cat['Category Emoji'].iloc[0]
 
-        # Convert to DataFrame
-        df = pd.DataFrame(data)
+            with st.expander(
+                    label=f'{category_emoji} {category} – ${total:,.0f}',
+                    expanded=False,
+            ):
+                # column width ratios
+                col_widths = [1, 1, 1, 1, 2]
 
-        # Format currency values with "$" symbol
-        df["Weekly"] = df["Weekly"].apply(lambda x: f"${x:,.2f}")
-        df["Monthly"] = df["Monthly"].apply(lambda x: f"${x:,.2f}")
-        df["Annual"] = df["Annual"].apply(lambda x: f"${x:,.2f}")
+                # one form per expense
+                for _, row in df_cat.iterrows():
+                    form_key = f'form-{int(row["ID"])}'
+                    with st.form(key=form_key):
+                        cols = st.columns(col_widths)
 
-        # Streamlit App Title
-        st.title("💰 Budget Overview")
+                        # 1) Name
+                        name_input = cols[0].text_input(
+                            label='Expense',
+                            value=row['Name'],
+                            key=f'name-{row["ID"]}',
+                        )
 
-        cols = st.columns(2)
-        with cols[0]:
-            st.title('Bar Chart Here')
+                        # 2) Amount
+                        amount_val = float(row['Amount'])
+                        step_size = float(compute_step(amount_val))
+                        amount_input = cols[1].number_input(
+                            label='Amount',
+                            value=amount_val,
+                            step=step_size,
+                            format='%0.2f',
+                            key=f'amount-{row["ID"]}',
+                        )
 
-        with cols[1]:
-            st.title('Pie Chart Here')
+                        # 3) Frequency
+                        try:
+                            freq_idx = frequency_options.index(row['Frequency'])
+                        except ValueError:
+                            freq_idx = 0
+                        frequency_input = cols[2].selectbox(
+                            label='Frequency',
+                            options=frequency_options,
+                            index=freq_idx,
+                            key=f'freq-{row["ID"]}',
+                        )
 
-        tabs = st.tabs(["📊 Budget Table", ] + expense_categories)
+                        # 4) Last Updated
+                        last_date = datetime.datetime.strptime(
+                            row['Date'], '%m/%d/%Y'
+                        ).date()
+                        date_input = cols[3].date_input(
+                            label='Last Updated',
+                            value=last_date,
+                            key=f'date-{row["ID"]}',
+                        )
 
-        with tabs[0]:
-            # Define custom CSS for correct table rendering in Streamlit
-            table_style = """
-                <style>
-                    .styled-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        font-family: Arial, sans-serif;
-                        font-size: 14px;
-                        margin-top: 20px;
-                    }
-                    .styled-table th {
-                        background-color: #004466;
-                        color: white;
-                        text-align: center;
-                        padding: 12px;
-                        font-size: 16px;
-                    }
-                    .styled-table td {
-                        padding: 10px;
-                        border-bottom: 1px solid #ddd;
-                        text-align: right;
-                    }
-                    .styled-table tr:nth-child(even) {
-                        background-color: #f2f2f2;
-                    }
-                    .styled-table tr:hover {
-                        background-color: #d9ebf9;
-                    }
-                    .styled-table td:first-child, .styled-table td:nth-child(2) {
-                        text-align: left;
-                        font-weight: bold;
-                    }
-                    .highlight {
-                        background-color: #ffcccc !important;
-                        font-weight: bold;
-                        padding: 5px;
-                    }
-                </style>
-            """
+                        # 5) Notes
+                        note_text = '' if pd.isna(row['Notes']) else row['Notes']
+                        notes_input = cols[4].text_area(
+                            label='Notes',
+                            value=note_text,
+                            key=f'notes-{row["ID"]}',
+                            height=68,
+                        )
 
-            # Highlight high annual expenses (> $5,000)
-            df["Annual"] = df["Annual"].apply(
-                lambda x: f'<span class="highlight">{x}</span>' if float(
-                    x.replace("$", "").replace(",", "")) > 5000 else x)
+                        # 6) & 7) Save / Delete
+                        save_delete_cols = st.columns([1, 1])
+                        save = save_delete_cols[0].form_submit_button('💾 Save', use_container_width=True)
+                        delete = save_delete_cols[1].form_submit_button('❌ Delete', use_container_width=True)
 
-            # Convert DataFrame to HTML
-            table_html = df.to_html(index=False, escape=False, classes="styled-table")
+                        if save:
+                            save_expense(
+                                expense_id=int(row['ID']),
+                                name=name_input,
+                                amount=amount_input,
+                                frequency=frequency_input,
+                                last_updated=date_input,
+                                notes=notes_input,
+                            )
+                        if delete:
+                            delete_expense(expense_id=int(row['ID']))
 
-            # ✅ Correct Way to Render the Table in Streamlit
-            st.write(table_style, unsafe_allow_html=True)  # Load CSS first
-            st.write(table_html, unsafe_allow_html=True)  # Render the table separately
+                # add-new-expense button
+                if st.button(
+                        '➕ Add Expense',
+                        key=f'add-expense-{category}',
+                ):
+                    st.info(f'Adding new expense to {category}')
 
-    # Render each known category
-    for expense_category in expense_categories:
-        render_expense_category(expense_category)
 
-with rhs_col:
-    # Button to save all changes back to CSV
-    if st.button(label="Save Budget", use_container_width=True, type="primary"):
-        save_data()
+budget_data = pd.read_csv('data/budget_data.csv')
 
-    # Optionally, a placeholder for "Open Budget" or "Add Expense Category"
-    st.button(label="Open Budget", use_container_width=True, type="primary")
-    st.button(label="Add Expense Category", use_container_width=True, type="primary")
+# after you've done pd.read_csv(...)
+budget_data['Category Emoji'] = (
+    budget_data['Category Emoji']
+    # first ensure it's a str (it probably already is)
+    .astype(str)
+    # encode to bytes so Python will treat backslashes as escapes
+    .str.encode('utf-8')
+    # then decode those escapes into actual codepoints
+    .str.decode('unicode_escape')
+)
 
-# (Optional) Display data in a table for reference
-# This will show you what's currently in session state or on disk if you reload
-st.write("### Current Budget Data")
-all_data = []
-for cat in expense_categories:
-    for exp in st.session_state[cat]:
-        all_data.append({
-            "Expense Category": cat,
-            "Expense Name": exp["name"],
-            "Amount": exp["cost"],
-            "Frequency": exp["frequency"],
-            "Notes": exp["notes"]
-        })
-st.dataframe(pd.DataFrame(all_data))
+expense_categories = budget_data['Category'].unique().tolist()
+
+frequency_options = budget_data['Frequency'].unique().tolist()
+
+st.title("Budget Tracker")
+
+# Custom CSS
+st.markdown("""
+<style>
+    .stButton > button {
+        width: 100%;
+    }
+
+    .category-header {
+        background-color: #f0f0f0;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    hr {
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Main content
+# Create tabs for different sections
+summary_tab, statistics_tab, expense_tab, settings_tab = st.tabs(['Summary', 'Statistics', 'Expenses', 'Settings'])
+
+with summary_tab:
+    st.subheader('Summary')
+
+    st.dataframe(budget_data)
+
+render_expenses_tab(
+    expense_tab=expense_tab,
+    budget_data=budget_data,
+    expense_categories=expense_categories,
+    frequency_options=frequency_options,
+)
+
+st.button('➕ Add Expense Category', key=f'add-expense-category')
+
+# with expense_tab:
+#     st.subheader('Expenses')
+#
+#     for category in expense_categories:
+#
+#         category_total = budget_data.loc[budget_data['Category'] == category, 'Amount'].sum().round(0)
+#
+#         with st.expander(
+#                 label=f'{category} - ${category_total:.0f}',
+#                 expanded=False,
+#         ):
+#             for expense in budget_data.loc[budget_data['Category'] == category, 'Name']:
+#                 st.write(expense)
+
+# # Initialize session state for storing expenses if not present
+# if "expenses" not in st.session_state:
+#     st.session_state.expenses = []
+#
+# # Form to add a new expense
+# with st.form(key="expense_form"):
+#     category = st.text_input("Category", placeholder="e.g., Food, Rent, Entertainment")
+#     amount = st.number_input("Amount", min_value=0.0, format="%.2f", step=1.0)
+#     notes = st.text_area("Notes (optional)", placeholder="Add any relevant details here")
+#     submitted = st.form_submit_button("Add Expense")
+#
+#     if submitted:
+#         if category and amount > 0:
+#             st.session_state.expenses.append({"category": category, "amount": amount, "notes": notes})
+#             st.success(f"Added expense to category '{category}'!")
+#         else:
+#             st.error("Category and amount are required fields!")
+#
+# # Display expenses summary grouped by category
+# if st.session_state.expenses:
+#     st.markdown("### Expense Summary")
+#     expenses_by_category = {}
+#     for expense in st.session_state.expenses:
+#         if expense["category"] not in expenses_by_category:
+#             expenses_by_category[expense["category"]] = 0
+#         expenses_by_category[expense["category"]] += expense["amount"]
+#
+#     for category, total in expenses_by_category.items():
+#         st.markdown(f"- **{category}:** ${total:.2f}")
