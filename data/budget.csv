@@ -1,0 +1,24 @@
+Expense Category,Expense Name,Amount,Frequency,Notes
+Subscriptions & Recurring Expenses,Subscriptions & Recurring Expenses,703.48,Monthly,nan
+Subscriptions & Recurring Expenses,Test,10000.0,Monthly,
+Planned Purchases,Planned Purchases,10000.0,Monthly,nan
+Housing,Rent,2273.0,Monthly,nan
+Utilities & Communications,Electricity,200.0,Monthly,nan
+Utilities & Communications,Water,100.0,Monthly,nan
+Utilities & Communications,Internet,50.0,Monthly,nan
+Utilities & Communications,Phone bill,175.64,Monthly,"$115.64 Mason, $60 Kara"
+Insurance,Health Insurance,188.74,Semi-Monthly,"*$168.75 insurance (Total Heath, Vision, and Dental is $5,027 annually"
+Insurance,Dental Insurance,27.05,Semi-Monthly,*$34.45
+Insurance,Vision Insurance,4.9,Semi-Monthly,*$6.24
+Insurance,Renter's Insurance,351.0,Monthly,nan
+Insurance,Car Insurance,667.0,Monthly,nan
+Insurance,Life Insurance,2.25,Semi-Monthly,nan
+Insurance,Short-term Disability,,Monthly,nan
+Insurance,Long-term Disability,2.93,Semi-Monthly,nan
+Insurance,Pet Insurance,50.0,Monthly,nan
+Insurance,Critical Illness,8.72,Semi-Monthly,nan
+Insurance,Critical Accident,7.43,Semi-Monthly,nan
+Insurance,Legal Services,8.15,Semi-Monthly,nan
+Debt Service,Student Loan Payments,882.5,Monthly,*882.50 based on SAVE plan
+Discretionary Income,Discretionary Income,400.0,Weekly,nan
+Discretionary Income,Dog Day Care,80.0,Weekly,*Hound Town
