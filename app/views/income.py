@@ -226,16 +226,16 @@ with lhs_col:
         tax_total_compensation = total_compensation - after_tax_total_compensation
 
         with cols[0]:
-            st.metric(label="Salary", value=f"${total_salary:,.0f}", delta=f"-${tax_salary:,.0f}")
+            st.metric(label="Salary", value=f"${total_salary:,.0f}", delta=f"-${tax_salary:,.0f} Taxes")
             st.metric(label='After Tax Salary', value=f"${after_tax_total_salary:,.0f}")
 
         with cols[1]:
-            st.metric(label="Bonus", value=f"${total_bonus:,.0f}", delta=f"-${tax_bonus:,.0f}")
+            st.metric(label="Bonus", value=f"${total_bonus:,.0f}", delta=f"-${tax_bonus:,.0f} Taxes")
             st.metric(label='After Tax Bonus', value=f"${after_tax_total_bonus:,.0f}")
 
         with cols[2]:
             st.metric(label="Total Compensation", value=f"${total_compensation:,.0f}",
-                      delta=f"-${tax_total_compensation:,.0f}")
+                      delta=f"-${tax_total_compensation:,.0f} Taxes")
             st.metric(label="After Tax Total Compensation", value=f"${after_tax_total_compensation:,.0f}")
 
         # **Create Two Pie Charts**
