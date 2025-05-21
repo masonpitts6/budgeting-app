@@ -336,8 +336,46 @@ frequency_options = (
 
 tabs = st.tabs(['Summary', 'Statistics', 'Expenses', 'Settings'])
 with tabs[0]:
+    PERIOD_MAP = {
+        'Weekly': 52,
+        'Semi-Monthly': 24,
+        'Monthly': 12,
+        'Quarterly': 4,
+        'Yearly': 1,
+    }
+
     st.subheader('Summary')
-    st.dataframe(st.session_state.budget_data)
+    budget_plan = st.session_state.budget_data.copy()
+    budget_plan['Annual Amount'] = budget_plan['Frequency'].map(PERIOD_MAP).fillna(0).astype(int) * budget_plan['Amount']
+
+    cols = st.columns(5)
+
+    cols[0].metric(
+        label="Weekly Total Budget",
+        value=f"${budget_plan['Annual Amount'].sum() / PERIOD_MAP['Weekly']:,.0f}",
+    )
+
+    cols[1].metric(
+        label="Semi-Monthly Total Budget",
+        value=f"${budget_plan['Annual Amount'].sum() / PERIOD_MAP['Semi-Monthly']:,.0f}",
+    )
+
+    cols[2].metric(
+        label="Monthly Total Budget",
+        value=f"${budget_plan['Annual Amount'].sum() / PERIOD_MAP['Monthly']:,.0f}",
+    )
+
+    cols[3].metric(
+        label="Quarterly Total Budget",
+        value=f"${budget_plan['Annual Amount'].sum() / PERIOD_MAP['Quarterly']:,.0f}",
+    )
+
+    cols[4].metric(
+        label="Annual Total Budget",
+        value=f"${budget_plan['Annual Amount'].sum() / PERIOD_MAP['Yearly']:,.0f}",
+    )
+
+    st.dataframe(budget_plan)
 
 render_expenses_tab(
     expense_tab=tabs[2],
