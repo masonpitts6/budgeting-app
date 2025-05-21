@@ -1,0 +1,5 @@
+/* Make expander labels large & bold */
+div[data-testid="stExpander"] details summary p{
+    font-size: 1.25rem;
+    font-weight: 700;    /* or use “bold” */
+}

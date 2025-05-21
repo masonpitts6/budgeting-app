@@ -17,6 +17,7 @@ if "user" not in st.session_state:
 # These imports rely on initializing the session state
 import pages
 import config
+
 st.logo(
     image='static/Streamlit Logo.png',
     size='large',
@@ -24,6 +25,15 @@ st.logo(
 )
 
 st.set_page_config(layout="wide")
+
+def local_css(file_name: str) -> None:
+    """Embed a local CSS file into the Streamlit page."""
+    with open(file_name, 'r', encoding='utf-8') as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# Inject your style.css
+css_path = os.path.join(PROJECT_ROOT, 'static', 'style.css')
+local_css(css_path)
 
 page_list = [
     pages.dashboard_page,
