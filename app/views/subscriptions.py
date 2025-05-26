@@ -12,5 +12,16 @@ file_path = Path(os.getcwd()) / "data" / "subscriptions.csv"
 # Read the CSV file
 subscription_data = pd.read_csv(file_path)
 
-# Display the dataframe in Streamlit
-st.dataframe(subscription_data)
+tabs = st.tabs(['Summary', 'Statistics', 'Subscriptions', 'Settings'])
+
+with tabs[0]:
+    # Display the dataframe in Streamlit
+    height = 625 if subscription_data.shape[0] > 10 else None
+
+    # Display the dataframe in Streamlit
+    st.dataframe(
+        data=subscription_data,
+        height=height,
+        use_container_width=True,
+        hide_index=True
+    )
