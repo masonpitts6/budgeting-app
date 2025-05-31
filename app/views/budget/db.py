@@ -1,4 +1,5 @@
 import datetime
+from typing import Dict, List, Tuple
 
 import pandas as pd
 import streamlit as st
@@ -125,3 +126,84 @@ def _save_df() -> None:
         index=False,
         encoding='utf-8-sig',
     )
+
+
+def bootstrap_budget_data(
+        period_map: Dict[str, float],
+        filepath: str = 'data/budget_data.csv',
+) -> Tuple[pd.DataFrame, List[str], List[str]]:
+    """
+    Initializes session state for budget data, computes derived budget_plan,
+    and returns budget_plan along with unique expense categories and frequency options.
+
+    Args:
+        period_map (Dict[str, float]): Dictionary mapping frequency names to
+            their corresponding annual-multiplier (e.g., {'Monthly': 12, 'Weekly': 52}).
+        filepath (str): Path to the CSV file to load budget data from. Defaults to 'data/budget_data.csv'.
+
+    Returns:
+        Tuple[pd.DataFrame, List[str], List[str]]:
+            - budget_plan: DataFrame containing original data plus 'Annual Amount',
+              period columns, and '% of Total Budget'.
+            - expense_categories: List of unique non-null categories from the original data.
+            - frequency_options: List of unique non-null frequency values from the original data.
+    """
+    # ─── Load or initialize session_state.budget_data ───────────────────────────
+    if 'budget_data' not in st.session_state:
+        try:
+            st.session_state.budget_data = pd.read_csv(
+                filepath,
+                encoding='utf-8-sig',
+            )
+        except FileNotFoundError:
+            st.session_state.budget_data = pd.DataFrame(
+                columns=[
+                    'ID',
+                    'Date',
+                    'Category',
+                    'Name',
+                    'Amount',
+                    'Frequency',
+                    'Tax Deductible',
+                    'Notes',
+                    'Status',
+                ]
+            )
+
+    # ─── Create budget_plan and compute 'Annual Amount' ─────────────────────────
+    budget_plan = st.session_state.budget_data.copy()
+    budget_plan['Annual Amount'] = (
+            budget_plan['Frequency']
+            .fillna('Monthly')
+            .map(period_map)
+            .fillna(0)
+            .astype(int)
+            * budget_plan['Amount']
+    )
+
+    # ─── Compute per-period columns based on period_map ─────────────────────────
+    for period in period_map.keys():
+        budget_plan[period] = budget_plan['Annual Amount'] / period_map[period]
+
+    # ─── Compute percentage of total budget ─────────────────────────────────────
+    total_annual = budget_plan['Annual Amount'].sum()
+    budget_plan['% of Total Budget'] = (
+        budget_plan['Annual Amount'] / total_annual * 100
+        if total_annual != 0 else 0
+    )
+
+    # ─── Extract unique non-null categories and frequencies ──────────────────────
+    expense_categories = (
+        st.session_state.budget_data['Category']
+        .dropna()
+        .unique()
+        .tolist()
+    )
+    frequency_options = (
+        st.session_state.budget_data['Frequency']
+        .dropna()
+        .unique()
+        .tolist()
+    )
+
+    return budget_plan, expense_categories, frequency_options
