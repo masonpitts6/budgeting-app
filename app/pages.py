@@ -25,7 +25,7 @@ budget_page = st.Page(
 )
 
 subscriptions_page = st.Page(
-    page='views/subscriptions.py',
+    page='views/subscriptions/page_subscriptions.py',
     title=config.PAGE_NAMES['subscriptions']
 )
 

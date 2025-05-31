@@ -131,7 +131,7 @@ def _save_df() -> None:
 def bootstrap_budget_data(
         period_map: Dict[str, float],
         filepath: str = 'data/budget_data.csv',
-) -> Tuple[pd.DataFrame, List[str], List[str]]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, List[str], List[str]]:
     """
     Initializes session state for budget data, computes derived budget_plan,
     and returns budget_plan along with unique expense categories and frequency options.
@@ -143,6 +143,7 @@ def bootstrap_budget_data(
 
     Returns:
         Tuple[pd.DataFrame, List[str], List[str]]:
+            - budget_data: DataFrame containing original data.
             - budget_plan: DataFrame containing original data plus 'Annual Amount',
               period columns, and '% of Total Budget'.
             - expense_categories: List of unique non-null categories from the original data.
@@ -206,4 +207,4 @@ def bootstrap_budget_data(
         .tolist()
     )
 
-    return budget_plan, expense_categories, frequency_options
+    return st.session_state.budget_data, budget_plan, expense_categories, frequency_options

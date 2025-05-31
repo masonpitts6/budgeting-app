@@ -1,17 +1,16 @@
 import streamlit as st
 
 from app import pages
+from app.views.budget import db
+from app.views.budget import tab_expenses
+from app.views.budget import tab_summary
 from app.views.budget.config import (
     PERIOD_MAP,
 )
-from app.views.budget import db
-from app.views.budget import tab_summary
-from app.views.budget import tab_expenses
-
 
 # --- Session State Bootstrap ------------------------------------------------
 
-budget_plan, expense_categories, frequency_options = db.bootstrap_budget_data(
+budget_data, budget_plan, expense_categories, frequency_options = db.bootstrap_budget_data(
     period_map=PERIOD_MAP,
     filepath='data/budget_data.csv',
 )
@@ -43,8 +42,9 @@ with tabs[0]:
         period_map=PERIOD_MAP,
     )
 
-tab_expenses.render_expenses_tab(
-    expense_tab=tabs[2],
-    expense_categories=expense_categories,
-    frequency_options=frequency_options,
-)
+with tabs[2]:
+    tab_expenses.render_expenses_tab(
+        budget_data=budget_data,
+        expense_categories=expense_categories,
+        frequency_options=frequency_options,
+    )
