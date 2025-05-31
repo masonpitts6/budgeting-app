@@ -20,7 +20,7 @@ income_page = st.Page(
 )
 
 budget_page = st.Page(
-    page='views/budget/page.py',
+    page='views/budget/page_budget.py',
     title=config.PAGE_NAMES['budget']
 )
 
@@ -30,7 +30,7 @@ subscriptions_page = st.Page(
 )
 
 planned_purchases = st.Page(
-    page='views/planned_purchases.py',
+    page='views/planned_purchases/page_planned_purchases.py',
     title=config.PAGE_NAMES['planned_purchases']
 )
 
