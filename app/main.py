@@ -74,6 +74,11 @@ else:
 with st.sidebar:
 
     st.button(
+        label='🟩 New Budget Plan',
+        use_container_width=True,
+    )
+
+    st.button(
         label='💾 Save Budget Plan',
         use_container_width=True,
     )
@@ -88,7 +93,10 @@ with st.sidebar:
         use_container_width=True,
     )
 
-    if st.button('⬅️ Logout', use_container_width=True,):
+    if st.button(
+            '⬅️ Logout',
+            use_container_width=True,
+    ):
         st.session_state.user = None
         st.switch_page(pages.login_page)
 

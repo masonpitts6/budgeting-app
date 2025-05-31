@@ -20,7 +20,7 @@ income_page = st.Page(
 )
 
 budget_page = st.Page(
-    page='views/budget.py',
+    page='views/budget/page.py',
     title=config.PAGE_NAMES['budget']
 )
 
