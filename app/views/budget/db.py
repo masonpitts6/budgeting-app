@@ -193,6 +193,15 @@ def bootstrap_budget_data(
         if total_annual != 0 else 0
     )
 
+    budget_plan['Category Total'] = budget_plan.groupby('Category')['Annual Amount'].transform('sum')
+    budget_plan['% of Total Category'] = (
+        budget_plan['Annual Amount'] / budget_plan['Category Total'] * 100
+    )
+
+    # TODO: Implement theses
+    budget_plan['% of After Tax Income'] = 'N/A'
+    budget_plan['% of Pre-Tax Income'] = 'N/A'
+
     # ─── Extract unique non-null categories and frequencies ──────────────────────
     expense_categories = (
         st.session_state.budget_data['Category']

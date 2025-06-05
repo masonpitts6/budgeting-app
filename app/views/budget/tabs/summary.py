@@ -1,7 +1,10 @@
 from typing import Dict
 
 import pandas as pd
+import pandas as pd
 import streamlit as st
+from typing import Dict
+from app.views.budget.utils import style_budget_plan_df
 
 
 def display_budget_summary_metrics(
@@ -29,9 +32,8 @@ def display_budget_summary_metrics(
                 value=f'${total_annual / period_map[period]:,.0f}',
             )
 
-import pandas as pd
-import streamlit as st
-from typing import Dict
+
+
 
 
 def display_budget_dataframe(
@@ -50,24 +52,33 @@ def display_budget_dataframe(
             in budget_plan (e.g., 'Weekly', 'Monthly', etc.).
     """
     # ─── Slice off only the columns to display ────────────────────────────────────
-    display_cols = [
-        'Date',
-        'Category',
-        'Name',
-    ] + list(period_map.keys()) + [
+    pct_cols = [
         '% of Total Budget',
+        '% of Total Category',
     ]
+
+    display_cols = ([
+                        'Date',
+                        'Category',
+                        'Name',
+                    ]
+                    + list(period_map.keys())
+                    + [
+                        '% of Total Budget',
+                        '% of Total Category',
+                        '% of Pre-Tax Income',
+                        '% of After Tax Income',
+                    ]
+                    )
     display_df = budget_plan.loc[:, display_cols]
 
-    # ─── Define formatting for each column ───────────────────────────────────────
-    df_fmt = {
-        col: '${:,.2f}'
-        for col in period_map.keys()
-    }
-    df_fmt['% of Total Budget'] = '{:.2f}%'
-
     # ─── Apply styling and render in Streamlit ──────────────────────────────────
-    styled = display_df.style.format(df_fmt)
+    styled = style_budget_plan_df(
+        df=display_df,
+        float_cols=list(period_map.keys()),
+        percentage_cols=pct_cols
+    )
+
     st.dataframe(
         styled,
         use_container_width=True,

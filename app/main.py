@@ -11,7 +11,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
 # Ensure session state is initialized
-if "user" not in st.session_state:
+if 'user' not in st.session_state:
     st.session_state.user = None
 
 # These imports rely on initializing the session state
@@ -24,12 +24,12 @@ st.logo(
     link=pages.dashboard_page.url_path
 )
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout='wide')
 
 def local_css(file_name: str) -> None:
     """Embed a local CSS file into the Streamlit page."""
     with open(file_name, 'r', encoding='utf-8') as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
 # Inject your style.css
 css_path = os.path.join(PROJECT_ROOT, 'static', 'style.css')
@@ -57,14 +57,12 @@ current_page = st.navigation(
     pages=page_list
 )
 
-
-
 # --- RUN NAVIGATION ---
 
 st.session_state.user = 'admin'
 # Check if user is NOT logged in and NOT already on login page
 if st.session_state.user is None and current_page.title != config.PAGE_NAMES['login']:
-    if "redirecting" not in st.session_state or not st.session_state.redirecting:
+    if 'redirecting' not in st.session_state or not st.session_state.redirecting:
         st.session_state.redirecting = True  # Prevents infinite loop
         st.switch_page(pages.login_page)  # Correct way to switch pages
 else:
