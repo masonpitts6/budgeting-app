@@ -58,6 +58,7 @@ def render_subscriptions_tab(
                 if row.Frequency in frequency_options
                 else 0
             )
+
             freq_input = cols[2].selectbox(
                 'Frequency',
                 options=frequency_options,
