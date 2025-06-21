@@ -69,7 +69,7 @@ def render_subscriptions_tab(
             date_val = (
                 pd.to_datetime(row.Date).date()
                 if pd.notna(row.Date)
-                else datetime.date.today()
+                else pd.Timestamp.today()
             )
             date_input = cols[3].date_input(
                 'Last Updated',
@@ -77,10 +77,12 @@ def render_subscriptions_tab(
                 key=f'date-{row.ID}',
             )
 
+            notes_val = '' if pd.isna(row['Notes']) else str(row['Notes'])
+
             notes_input = cols[4].text_area(
                 'Notes',
-                value=row.Notes or '',
-                key=f'notes-{row.ID}',
+                value=notes_val,
+                key=f'notes-{row['ID']}',
                 height=68,
             )
 

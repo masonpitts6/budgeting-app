@@ -4,7 +4,7 @@ import config
 # --- PAGE SETUP ---
 
 dashboard_page = st.Page(
-    page='views/dashboard.py',
+    page='views/dashboard/page_dashboard.py',
     title=config.PAGE_NAMES['dashboard'],
     default=True
 )

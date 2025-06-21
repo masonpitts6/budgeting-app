@@ -3,5 +3,5 @@ PERIOD_MAP = {
     'Semi-Monthly': 24,
     'Monthly': 12,
     'Quarterly': 4,
-    'Yearly': 1,
+    'Annual': 1,
 }

@@ -1,5 +1,7 @@
 import datetime
-from typing import Any, Dict, Union, Optional
+from pathlib import Path
+from typing import Any, Dict, Optional
+from typing import Union
 
 import pandas as pd
 import streamlit as st
@@ -62,10 +64,56 @@ def st_append_to_dataframe(
     setattr(st.session_state, df_name, updated_df)
 
 
-
-def add_subscription(
-        category: str
+def st_save_df_to_csv(
+        filename: str,
+        directory: Union[str, Path] = Path('data'),
+        index: bool = False,
 ) -> None:
+    """
+    Persist a session-state DataFrame to a CSV file using pathlib.
+
+    Args:
+        filename (str): Key of the DataFrame in `st.session_state` to save, and the base name of the file.
+        directory (Union[str, Path]): Directory in which to save the CSV file. Defaults to 'data'.
+            If the directory does not exist, it will be created.
+        index (bool): Whether to write row names (index). Defaults to False.
+
+    Raises:
+        KeyError: If `filename` is not found in `st.session_state`.
+        TypeError: If the object under `st.session_state[filename]` is not a DataFrame.
+
+    Returns:
+        None
+    """
+    # Build the full file path
+    dir_path = Path(directory)
+    file_path = dir_path / filename
+
+    # Ensure .csv extension
+    if file_path.suffix.lower() != '.csv':
+        file_path = file_path.with_suffix('.csv')
+
+    # Create directory if needed
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Retrieve DataFrame
+    try:
+        df = getattr(st.session_state, filename)
+    except AttributeError:
+        raise KeyError(f"No DataFrame found in session_state under key filename: '{filename}'")
+
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Object under session_state['{filename}'] is not a DataFrame")
+
+    # Save DataFrame to CSV
+    df.to_csv(
+        file_path,
+        index=index,
+        encoding='utf-8-sig',
+    )
+
+
+def add_subscription() -> None:
     """
     Append a blank expense for the given category and rerun to show the form.
 
@@ -75,16 +123,12 @@ def add_subscription(
     Returns:
         None
     """
-    # Keeps expander of the category of the added expense open.
-    st.session_state[f'exp_{category}'] = True
-
-    df = st.session_state.budget_data.copy()
+    df = st.session_state.subscriptions.copy()
     new_id = int(df['ID'].max() + 1) if not df.empty else 1
 
     new_row = {
         'ID': new_id,
         'Date': datetime.date.today(),
-        'Category': category,
         'Name': 'New Expense',
         'Amount': 0.0,
         'Frequency': 'Monthly',
@@ -93,12 +137,12 @@ def add_subscription(
         'Status': 'Active',
     }
 
-    df = pd.concat(
-        [df, pd.DataFrame([new_row])],
+    st_append_to_dataframe(
+        append_data=new_row,
+        df_name='subscriptions',
         ignore_index=True,
     )
-    st.session_state.budget_data = df
-    _save_df()
+    st_save_df_to_csv()
     st.rerun()
 
 
